@@ -10,86 +10,105 @@ function ShopEnginePreview.new()
     self.actionEventId = nil
     self.currentVehicle = nil
     self.currentScreen = nil
-    self.hooksInstalled = false
-    self.installAttempted = false
+    self.loggedNoGuiHandle = false
     return self
 end
 
 function ShopEnginePreview:loadMap()
+    if g_dedicatedServer ~= nil then
+        return
+    end
+
     if g_gui == nil or g_inputBinding == nil then
-        Logging.info("[%s] GUI systems unavailable (likely dedicated server).", ShopEnginePreview.MOD_NAME)
+        Logging.info("[%s] GUI/input systems unavailable.", ShopEnginePreview.MOD_NAME)
+        return
+    end
+end
+
+function ShopEnginePreview:update(dt)
+    if g_dedicatedServer ~= nil then
         return
     end
 
-    self:installHooksIfAvailable()
-end
-
-function ShopEnginePreview:update()
-    if self.hooksInstalled or self.installAttempted then
+    if g_gui == nil or g_inputBinding == nil then
         return
     end
 
-    self:installHooksIfAvailable()
+    local screen = self:getActiveScreen()
+    if self:isShopScreen(screen) then
+        if self.currentScreen ~= screen then
+            self:onShopScreenChanged(screen)
+        end
+
+        local vehicle = self:getPreviewVehicle(screen)
+        if vehicle ~= self.currentVehicle then
+            self:stopPreviewEngine(self.currentVehicle)
+            self.currentVehicle = vehicle
+        end
+    elseif self.currentScreen ~= nil then
+        self:leaveShopScreen()
+    end
 end
 
-function ShopEnginePreview:installHooksIfAvailable()
-    self.installAttempted = true
-
-    if ShopConfigScreen == nil then
-        Logging.warning("[%s] ShopConfigScreen class not available, engine preview disabled.", ShopEnginePreview.MOD_NAME)
-        return
+function ShopEnginePreview:getActiveScreen()
+    if g_gui.currentGui ~= nil then
+        return g_gui.currentGui
     end
 
-    self:installHooks(ShopConfigScreen)
-end
-
-function ShopEnginePreview:installHooks(screenClass)
-    if self.hooksInstalled then
-        return
+    if g_gui.getCurrentGui ~= nil then
+        local ok, a, b = pcall(g_gui.getCurrentGui, g_gui)
+        if ok then
+            if type(b) == "table" then
+                return b
+            end
+            if type(a) == "table" then
+                return a
+            end
+        end
     end
 
-    screenClass.onOpen = Utils.appendedFunction(screenClass.onOpen, function(screen, ...)
-        self:onShopOpen(screen)
-    end)
+    if not self.loggedNoGuiHandle then
+        Logging.warning("[%s] Could not resolve active GUI screen handle.", ShopEnginePreview.MOD_NAME)
+        self.loggedNoGuiHandle = true
+    end
 
-    screenClass.onClose = Utils.prependedFunction(screenClass.onClose, function(screen, ...)
-        self:onShopClose(screen)
-    end)
-
-    screenClass.update = Utils.appendedFunction(screenClass.update, function(screen, dt)
-        self:onShopUpdate(screen, dt)
-    end)
-
-    self.hooksInstalled = true
+    return nil
 end
 
-function ShopEnginePreview:onShopOpen(screen)
+function ShopEnginePreview:isShopScreen(screen)
+    if screen == nil then
+        return false
+    end
+
+    if screen.vehicle ~= nil or screen.currentVehicle ~= nil then
+        return true
+    end
+
+    if screen.vehiclePreview ~= nil then
+        return true
+    end
+
+    local className = screen.className or ""
+    if className == "ShopConfigScreen" or className == "ShopMenu" then
+        return true
+    end
+
+    return false
+end
+
+function ShopEnginePreview:onShopScreenChanged(screen)
+    self:leaveShopScreen()
+
     self.currentScreen = screen
     self.currentVehicle = self:getPreviewVehicle(screen)
     self:registerActionEvent()
 end
 
-function ShopEnginePreview:onShopClose(screen)
-    if self.currentScreen ~= screen then
-        return
-    end
-
+function ShopEnginePreview:leaveShopScreen()
     self:stopPreviewEngine(self.currentVehicle)
     self:unregisterActionEvent()
     self.currentVehicle = nil
     self.currentScreen = nil
-end
-
-function ShopEnginePreview:onShopUpdate(screen)
-    if self.currentScreen ~= screen then
-        return
-    end
-
-    local vehicle = self:getPreviewVehicle(screen)
-    if vehicle ~= self.currentVehicle then
-        self:stopPreviewEngine(self.currentVehicle)
-        self.currentVehicle = vehicle
-    end
 end
 
 function ShopEnginePreview:getPreviewVehicle(screen)
@@ -133,10 +152,11 @@ function ShopEnginePreview:registerActionEvent()
 end
 
 function ShopEnginePreview:unregisterActionEvent()
-    if self.actionEventId ~= nil then
+    if self.actionEventId ~= nil and g_inputBinding ~= nil then
         g_inputBinding:removeActionEvent(self.actionEventId)
-        self.actionEventId = nil
     end
+
+    self.actionEventId = nil
 end
 
 function ShopEnginePreview:onActionTogglePreview(_, inputValue, _, isAnalog)
@@ -173,11 +193,12 @@ function ShopEnginePreview:startPreviewEngine(vehicle)
 
     if vehicle.startMotor ~= nil then
         vehicle:startMotor()
-    else
-        local motor = vehicle.getMotor ~= nil and vehicle:getMotor() or nil
-        if motor ~= nil and motor.setMotorStarted ~= nil then
-            motor:setMotorStarted(true)
-        end
+        return
+    end
+
+    local motor = vehicle.getMotor ~= nil and vehicle:getMotor() or nil
+    if motor ~= nil and motor.setMotorStarted ~= nil then
+        motor:setMotorStarted(true)
     end
 end
 
@@ -188,11 +209,12 @@ function ShopEnginePreview:stopPreviewEngine(vehicle)
 
     if vehicle.stopMotor ~= nil then
         vehicle:stopMotor()
-    else
-        local motor = vehicle.getMotor ~= nil and vehicle:getMotor() or nil
-        if motor ~= nil and motor.setMotorStarted ~= nil then
-            motor:setMotorStarted(false)
-        end
+        return
+    end
+
+    local motor = vehicle.getMotor ~= nil and vehicle:getMotor() or nil
+    if motor ~= nil and motor.setMotorStarted ~= nil then
+        motor:setMotorStarted(false)
     end
 end
 

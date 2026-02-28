@@ -22,4 +22,12 @@ This repository contains a Farming Simulator 25 mod that lets players preview a 
 - `l10n/texts_de.xml`
 
 ## Packaging
+> ⚠️ **Important:** The **GitHub "Download ZIP"** file will not load directly in-game because it wraps files inside a top-level folder (so `modDesc.xml` is not at the zip root).
+
+Use one of these methods:
+
+1. Run `./package_mod.sh` in this repo to create a game-ready zip.
+2. Or manually zip the *contents* (`modDesc.xml`, `inputBinding.xml`, `scripts/`, `l10n/`) so `modDesc.xml` is at the root of the zip.
+
+Then copy the generated zip into your FS25 mods folder.
 Zip the repository contents so that `modDesc.xml` is at the root of the zip, then place the zip in your FS25 mods folder.

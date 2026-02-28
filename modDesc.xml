@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <modDesc descVersion="95">
     <author>Codex</author>
-    <version>1.0.0.0</version>
+    <version>1.0.1.0</version>
     <title>
         <en>Shop Engine Sound Preview</en>
         <de>Motor-Sound Vorschau im Shop</de>
@@ -13,9 +13,9 @@
 
     <multiplayer supported="true"/>
 
-    <inputBindings>
+    <actions>
         <action name="TOGGLE_SHOP_ENGINE_PREVIEW" category="VEHICLE" axisType="DIGITAL"/>
-    </inputBindings>
+    </actions>
 
     <extraSourceFiles>
         <sourceFile filename="scripts/ShopEnginePreview.lua"/>
