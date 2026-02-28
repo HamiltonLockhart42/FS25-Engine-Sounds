@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<modDesc descVersion="95">
+    <author>Codex</author>
+    <version>1.0.0.0</version>
+    <title>
+        <en>Shop Engine Sound Preview</en>
+        <de>Motor-Sound Vorschau im Shop</de>
+    </title>
+    <description>
+        <en>Press a key in the vehicle shop to start or stop the preview vehicle engine and hear its sound before buying.</en>
+        <de>Drücke eine Taste im Fahrzeugshop, um den Motor des Vorschau-Fahrzeugs zu starten oder zu stoppen und den Sound vor dem Kauf zu hören.</de>
+    </description>
+
+    <multiplayer supported="true"/>
+
+    <actions>
+        <action name="TOGGLE_SHOP_ENGINE_PREVIEW" category="VEHICLE" axisType="DIGITAL"/>
+    </actions>
+
+    <extraSourceFiles>
+        <sourceFile filename="scripts/ShopEnginePreview.lua"/>
+    </extraSourceFiles>
+
+    <l10n filenamePrefix="l10n/texts"/>
+    <inputBinding filename="inputBinding.xml"/>
+</modDesc>
