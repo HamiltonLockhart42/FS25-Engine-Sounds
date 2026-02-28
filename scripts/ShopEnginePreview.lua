@@ -12,15 +12,10 @@ function ShopEnginePreview.new()
     self.currentScreen = nil
     self.hooksInstalled = false
     self.installAttempted = false
-    -- retry install in update() until success; installAttempted is informational only
     return self
 end
 
 function ShopEnginePreview:loadMap()
-    if g_dedicatedServer ~= nil then
-        return
-    end
-
     if g_gui == nil or g_inputBinding == nil then
         Logging.info("[%s] GUI systems unavailable (likely dedicated server).", ShopEnginePreview.MOD_NAME)
         return
@@ -30,10 +25,6 @@ function ShopEnginePreview:loadMap()
 end
 
 function ShopEnginePreview:update(dt)
-    if g_dedicatedServer ~= nil then
-        return
-    end
-
     if self.hooksInstalled then
         return
     end
