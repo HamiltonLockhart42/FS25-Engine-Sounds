@@ -11,33 +11,21 @@ function ShopEnginePreview.new()
     self.currentVehicle = nil
     self.currentScreen = nil
     self.hooksInstalled = false
-    self.missingScreenLogged = false
+    self.installAttempted = false
     return self
 end
 
 function ShopEnginePreview:loadMap()
-    if g_dedicatedServer ~= nil then
-        return
-    end
-
     if g_gui == nil or g_inputBinding == nil then
-        Logging.info("[%s] GUI/input systems unavailable.", ShopEnginePreview.MOD_NAME)
+        Logging.info("[%s] GUI systems unavailable (likely dedicated server).", ShopEnginePreview.MOD_NAME)
         return
     end
 
     self:installHooksIfAvailable()
 end
 
-function ShopEnginePreview:update(dt)
-    if g_dedicatedServer ~= nil then
-        return
-    end
-
-    if self.hooksInstalled then
-        return
-    end
-
-    if g_gui == nil or g_inputBinding == nil then
+function ShopEnginePreview:update()
+    if self.hooksInstalled or self.installAttempted then
         return
     end
 
@@ -45,17 +33,14 @@ function ShopEnginePreview:update(dt)
 end
 
 function ShopEnginePreview:installHooksIfAvailable()
-    local screenClass = ShopConfigScreen
+    self.installAttempted = true
 
-    if screenClass == nil then
-        if not self.missingScreenLogged then
-            Logging.warning("[%s] ShopConfigScreen not available yet, will retry.", ShopEnginePreview.MOD_NAME)
-            self.missingScreenLogged = true
-        end
+    if ShopConfigScreen == nil then
+        Logging.warning("[%s] ShopConfigScreen class not available, engine preview disabled.", ShopEnginePreview.MOD_NAME)
         return
     end
 
-    self:installHooks(screenClass)
+    self:installHooks(ShopConfigScreen)
 end
 
 function ShopEnginePreview:installHooks(screenClass)
@@ -67,7 +52,7 @@ function ShopEnginePreview:installHooks(screenClass)
         self:onShopOpen(screen)
     end)
 
-    screenClass.onClose = Utils.appendedFunction(screenClass.onClose, function(screen, ...)
+    screenClass.onClose = Utils.prependedFunction(screenClass.onClose, function(screen, ...)
         self:onShopClose(screen)
     end)
 
@@ -76,7 +61,6 @@ function ShopEnginePreview:installHooks(screenClass)
     end)
 
     self.hooksInstalled = true
-    Logging.info("[%s] Shop hooks installed.", ShopEnginePreview.MOD_NAME)
 end
 
 function ShopEnginePreview:onShopOpen(screen)
@@ -96,7 +80,7 @@ function ShopEnginePreview:onShopClose(screen)
     self.currentScreen = nil
 end
 
-function ShopEnginePreview:onShopUpdate(screen, dt)
+function ShopEnginePreview:onShopUpdate(screen)
     if self.currentScreen ~= screen then
         return
     end
@@ -131,13 +115,9 @@ end
 function ShopEnginePreview:registerActionEvent()
     self:unregisterActionEvent()
 
-    if g_inputBinding == nil then
-        return
-    end
-
     local actionId = InputAction[self.ACTION_NAME]
     if actionId == nil then
-        Logging.warning("[%s] Missing input action '%s'. Check modDesc.xml actions block.", ShopEnginePreview.MOD_NAME, self.ACTION_NAME)
+        Logging.warning("[%s] Missing input action '%s'.", ShopEnginePreview.MOD_NAME, self.ACTION_NAME)
         return
     end
 
@@ -153,11 +133,10 @@ function ShopEnginePreview:registerActionEvent()
 end
 
 function ShopEnginePreview:unregisterActionEvent()
-    if self.actionEventId ~= nil and g_inputBinding ~= nil then
+    if self.actionEventId ~= nil then
         g_inputBinding:removeActionEvent(self.actionEventId)
+        self.actionEventId = nil
     end
-
-    self.actionEventId = nil
 end
 
 function ShopEnginePreview:onActionTogglePreview(_, inputValue, _, isAnalog)
@@ -194,12 +173,11 @@ function ShopEnginePreview:startPreviewEngine(vehicle)
 
     if vehicle.startMotor ~= nil then
         vehicle:startMotor()
-        return
-    end
-
-    local motor = vehicle.getMotor ~= nil and vehicle:getMotor() or nil
-    if motor ~= nil and motor.setMotorStarted ~= nil then
-        motor:setMotorStarted(true)
+    else
+        local motor = vehicle.getMotor ~= nil and vehicle:getMotor() or nil
+        if motor ~= nil and motor.setMotorStarted ~= nil then
+            motor:setMotorStarted(true)
+        end
     end
 end
 
@@ -210,12 +188,11 @@ function ShopEnginePreview:stopPreviewEngine(vehicle)
 
     if vehicle.stopMotor ~= nil then
         vehicle:stopMotor()
-        return
-    end
-
-    local motor = vehicle.getMotor ~= nil and vehicle:getMotor() or nil
-    if motor ~= nil and motor.setMotorStarted ~= nil then
-        motor:setMotorStarted(false)
+    else
+        local motor = vehicle.getMotor ~= nil and vehicle:getMotor() or nil
+        if motor ~= nil and motor.setMotorStarted ~= nil then
+            motor:setMotorStarted(false)
+        end
     end
 end
 

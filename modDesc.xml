@@ -13,9 +13,9 @@
 
     <multiplayer supported="true"/>
 
-    <actions>
+    <inputBindings>
         <action name="TOGGLE_SHOP_ENGINE_PREVIEW" category="VEHICLE" axisType="DIGITAL"/>
-    </actions>
+    </inputBindings>
 
     <extraSourceFiles>
         <sourceFile filename="scripts/ShopEnginePreview.lua"/>
