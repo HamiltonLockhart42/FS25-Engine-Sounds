@@ -30,3 +30,4 @@ Use one of these methods:
 2. Or manually zip the *contents* (`modDesc.xml`, `inputBinding.xml`, `scripts/`, `l10n/`) so `modDesc.xml` is at the root of the zip.
 
 Then copy the generated zip into your FS25 mods folder.
+Zip the repository contents so that `modDesc.xml` is at the root of the zip, then place the zip in your FS25 mods folder.
