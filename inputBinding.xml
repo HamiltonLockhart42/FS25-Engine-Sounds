@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<inputBinding>
+    <actionBinding action="TOGGLE_SHOP_ENGINE_PREVIEW">
+        <binding device="KB_MOUSE_DEFAULT" input="KEY_k"/>
+        <binding device="XINPUT_GAMEPAD" input="BUTTON_X"/>
+    </actionBinding>
+</inputBinding>
