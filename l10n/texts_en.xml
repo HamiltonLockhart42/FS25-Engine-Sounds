@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<l10n>
+    <text name="input_TOGGLE_SHOP_ENGINE_PREVIEW">
+        <en>Toggle shop engine preview</en>
+    </text>
+    <text name="shop_engine_preview_action">
+        <en>Start/Stop engine sound preview</en>
+    </text>
+</l10n>
