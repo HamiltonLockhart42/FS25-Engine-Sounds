@@ -11,6 +11,7 @@ function ShopEnginePreview.new()
     self.currentVehicle = nil
     self.currentScreen = nil
     self.hooksInstalled = false
+    -- intentionally no one-shot install flag: update() retries until ShopConfigScreen is available
     return self
 end
 
@@ -20,7 +21,7 @@ function ShopEnginePreview:loadMap()
     end
 
     if g_gui == nil or g_inputBinding == nil then
-        Logging.info("[%s] GUI systems unavailable.", ShopEnginePreview.MOD_NAME)
+        Logging.info("[%s] GUI systems unavailable (likely dedicated server).", ShopEnginePreview.MOD_NAME)
         return
     end
 
