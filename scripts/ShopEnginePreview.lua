@@ -10,8 +10,6 @@ function ShopEnginePreview.new()
     self.actionEventId = nil
     self.currentVehicle = nil
     self.currentScreen = nil
-    self.hooksInstalled = false
-    self.missingScreenLogged = false
     self.loggedNoGuiHandle = false
     return self
 end
@@ -25,9 +23,6 @@ function ShopEnginePreview:loadMap()
         Logging.info("[%s] GUI/input systems unavailable.", ShopEnginePreview.MOD_NAME)
         return
     end
-
-    -- Prefer direct shop hooks for reliable action visibility in the HUD/help area.
-    self:installHooksIfAvailable()
 end
 
 function ShopEnginePreview:update(dt)
@@ -39,61 +34,19 @@ function ShopEnginePreview:update(dt)
         return
     end
 
-    -- Keep retrying hook installation in case ShopConfigScreen is loaded later.
-    if not self.hooksInstalled then
-        self:installHooksIfAvailable()
-    end
-
-    -- Runtime fallback path for environments where class hooks are unavailable.
-    if not self.hooksInstalled then
-        self:updateRuntimeScreenFallback()
-    end
-end
-
-function ShopEnginePreview:installHooksIfAvailable()
-    local screenClass = ShopConfigScreen
-    if screenClass == nil then
-        if not self.missingScreenLogged then
-            Logging.warning("[%s] ShopConfigScreen not available yet, will retry.", ShopEnginePreview.MOD_NAME)
-            self.missingScreenLogged = true
-        end
-        return
-    end
-
-    self:installHooks(screenClass)
-end
-
-function ShopEnginePreview:installHooks(screenClass)
-    if self.hooksInstalled then
-        return
-    end
-
-    screenClass.onOpen = Utils.appendedFunction(screenClass.onOpen, function(screen, ...)
-        self:onShopOpen(screen)
-    end)
-
-    screenClass.onClose = Utils.appendedFunction(screenClass.onClose, function(screen, ...)
-        self:onShopClose(screen)
-    end)
-
-    screenClass.update = Utils.appendedFunction(screenClass.update, function(screen, dt)
-        self:onShopUpdate(screen, dt)
-    end)
-
-    self.hooksInstalled = true
-    Logging.info("[%s] Shop hooks installed.", ShopEnginePreview.MOD_NAME)
-end
-
-function ShopEnginePreview:updateRuntimeScreenFallback()
     local screen = self:getActiveScreen()
     if self:isShopScreen(screen) then
         if self.currentScreen ~= screen then
-            self:onShopOpen(screen)
-        else
-            self:onShopUpdate(screen)
+            self:onShopScreenChanged(screen)
+        end
+
+        local vehicle = self:getPreviewVehicle(screen)
+        if vehicle ~= self.currentVehicle then
+            self:stopPreviewEngine(self.currentVehicle)
+            self.currentVehicle = vehicle
         end
     elseif self.currentScreen ~= nil then
-        self:onShopClose(self.currentScreen)
+        self:leaveShopScreen()
     end
 end
 
@@ -136,36 +89,26 @@ function ShopEnginePreview:isShopScreen(screen)
     end
 
     local className = screen.className or ""
-    return className == "ShopConfigScreen" or className == "ShopMenu"
+    if className == "ShopConfigScreen" or className == "ShopMenu" then
+        return true
+    end
+
+    return false
 end
 
-function ShopEnginePreview:onShopOpen(screen)
+function ShopEnginePreview:onShopScreenChanged(screen)
+    self:leaveShopScreen()
+
     self.currentScreen = screen
     self.currentVehicle = self:getPreviewVehicle(screen)
     self:registerActionEvent()
 end
 
-function ShopEnginePreview:onShopClose(screen)
-    if self.currentScreen ~= screen then
-        return
-    end
-
+function ShopEnginePreview:leaveShopScreen()
     self:stopPreviewEngine(self.currentVehicle)
     self:unregisterActionEvent()
     self.currentVehicle = nil
     self.currentScreen = nil
-end
-
-function ShopEnginePreview:onShopUpdate(screen, dt)
-    if self.currentScreen ~= screen then
-        return
-    end
-
-    local vehicle = self:getPreviewVehicle(screen)
-    if vehicle ~= self.currentVehicle then
-        self:stopPreviewEngine(self.currentVehicle)
-        self.currentVehicle = vehicle
-    end
 end
 
 function ShopEnginePreview:getPreviewVehicle(screen)
