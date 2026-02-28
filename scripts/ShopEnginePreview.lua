@@ -11,7 +11,8 @@ function ShopEnginePreview.new()
     self.currentVehicle = nil
     self.currentScreen = nil
     self.hooksInstalled = false
-    -- intentionally no one-shot install flag: update() retries until ShopConfigScreen is available
+    self.installAttempted = false
+    -- retry install in update() until success; installAttempted is informational only
     return self
 end
 
@@ -50,6 +51,7 @@ function ShopEnginePreview:installHooksIfAvailable()
     end
 
     self:installHooks(ShopConfigScreen)
+    self.installAttempted = true
 end
 
 function ShopEnginePreview:installHooks(screenClass)
