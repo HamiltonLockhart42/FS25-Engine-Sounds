@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<l10n>
+    <text name="input_TOGGLE_SHOP_ENGINE_PREVIEW">
+        <de>Shop-Motorvorschau umschalten</de>
+    </text>
+    <text name="shop_engine_preview_action">
+        <de>Motor-Sound Vorschau Start/Stopp</de>
+    </text>
+</l10n>
